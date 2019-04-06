@@ -1,0 +1,71 @@
+
+// FirebaseDemo_ESP8266 is a sample that demo the different functions
+// of the FirebaseArduino API.
+
+#include <ESP8266WiFi.h>
+#include <FirebaseArduino.h>
+
+// Set these to run example.
+#define FIREBASE_HOST "leddemo-53e7c.firebaseio.com"
+#define FIREBASE_AUTH "txGcfIFocY0vI6LHOC3Gv04CBzjhtPN0SleFrY9b"
+#define WIFI_SSID "TURED"
+#define WIFI_PASSWORD "TUPASS"
+#include <Servo.h>
+
+//Servo Negro -> GND, Cafe -> Corriente, Naranja -> D4
+//Led, Positivo -> D1, Negativo -> GND.
+
+Servo fan;
+
+void setup() {
+  pinMode(D1, OUTPUT);
+  Serial.begin(9600);
+  fan.attach(2); //D4 [Orange]
+  // connect to wifi.
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("connecting");
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(500);
+  }
+  Serial.println();
+  Serial.print("connected: ");
+  Serial.println(WiFi.localIP());
+
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  Firebase.set("automation/fan/value", 0);
+  Firebase.set("automation/light/value", 0);
+}
+
+void loop() {
+  l();
+  f();
+}
+
+void l() {
+  int lightV = 0;
+  lightV = Firebase.getInt("automation/light/value");
+  if (lightV == 1) {
+    Serial.println("Light On");
+    digitalWrite(D1, HIGH);
+    delay(200);
+  } else {
+    Serial.println("Light Off");
+    digitalWrite(D1, LOW);
+  }
+}
+
+void f() {
+  int fanV = 0;
+  fanV = Firebase.getInt("automation/fan/value");
+  if (fanV == 1) {
+    Serial.println("Turn on Fan");
+    for (int i = 0; i <= 160; i++) {
+      fan.write(i);
+    }
+    delay(200);
+  } else {
+    Serial.println("Turn off Fan");
+    fan.write(0);
+  }
+}
